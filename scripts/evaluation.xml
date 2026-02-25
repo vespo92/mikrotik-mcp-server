@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<evaluation>
+
+  <!-- Q1: Device identity via mikrotik_system_info -->
+  <qa_pair>
+    <question>What is the identity name of this MikroTik RouterOS device?</question>
+    <answer>ax2-skynet</answer>
+  </qa_pair>
+
+  <!-- Q2: CPU count via mikrotik_system_info -->
+  <qa_pair>
+    <question>How many CPU cores does this MikroTik device have?</question>
+    <answer>4</answer>
+  </qa_pair>
+
+  <!-- Q3: Static DNS records count via mikrotik_list_dns_static -->
+  <qa_pair>
+    <question>How many static DNS records are configured on this router?</question>
+    <answer>5</answer>
+  </qa_pair>
+
+  <!-- Q4: DNS record lookup via mikrotik_list_dns_static -->
+  <qa_pair>
+    <question>What IP address does the static DNS record for 'router.lan' resolve to?</question>
+    <answer>192.168.100.1</answer>
+  </qa_pair>
+
+  <!-- Q5: DNS record lookup via mikrotik_list_dns_static -->
+  <qa_pair>
+    <question>What IP address does the static DNS record for 'api.comagic.ru' resolve to?</question>
+    <answer>195.211.123.49</answer>
+  </qa_pair>
+
+  <!-- Q6: DHCP server pool via mikrotik_list_dhcp_servers -->
+  <qa_pair>
+    <question>What is the name of the address pool used by the DHCP server named 'defconf'?</question>
+    <answer>pool-vpn</answer>
+  </qa_pair>
+
+  <!-- Q7: DHCP server lease time via mikrotik_list_dhcp_servers -->
+  <qa_pair>
+    <question>What is the configured lease time of the DHCP server named 'defconf'?</question>
+    <answer>30m</answer>
+  </qa_pair>
+
+  <!-- Q8: IP address on WAN interface via mikrotik_list_ip_addresses -->
+  <qa_pair>
+    <question>What is the full CIDR address (IP with prefix length) configured on interface 'ether1'?</question>
+    <answer>94.19.209.186/20</answer>
+  </qa_pair>
+
+  <!-- Q9: Default route gateway via mikrotik_list_routes -->
+  <qa_pair>
+    <question>What is the gateway IP address for the active default route (destination 0.0.0.0/0) in the 'main' routing table?</question>
+    <answer>94.19.208.1</answer>
+  </qa_pair>
+
+  <!-- Q10: Total NAT rules count via mikrotik_list_nat_rules -->
+  <qa_pair>
+    <question>How many NAT rules are configured on this router in total?</question>
+    <answer>13</answer>
+  </qa_pair>
+
+</evaluation>

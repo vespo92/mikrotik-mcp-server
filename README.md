@@ -1,0 +1,304 @@
+# @ai-solutions.ru/mikrotik-mcp-server
+
+[![npm version](https://badge.fury.io/js/%40ai-solutions.ru%2Fmikrotik-mcp-server.svg)](https://www.npmjs.com/package/@ai-solutions.ru/mikrotik-mcp-server)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js >=18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+[![MCP SDK 1.16+](https://img.shields.io/badge/MCP%20SDK-1.16%2B-blue)](https://github.com/modelcontextprotocol/typescript-sdk)
+
+High-performance **TypeScript** MCP (Model Context Protocol) server for MikroTik RouterOS management. Connect Claude, GPT-4, or any MCP-compatible AI to your MikroTik router and manage it through natural language.
+
+```bash
+npx @ai-solutions.ru/mikrotik-mcp-server
+```
+
+---
+
+## 🚀 Why This Server?
+
+| Feature | **This server** | jeff-nasseri/mikrotik-mcp | kevinpez (nested fork) |
+|---|---|---|---|
+| Language | **TypeScript / Node.js** | Python | Python |
+| Dynamic API Discovery | ✅ **Browse full RouterOS API tree** | ❌ | ❌ |
+| Structured JSON output (`structuredContent`) | ✅ **Every tool** | ❌ | ❌ |
+| Zod output schemas | ✅ **Typed & validated** | ❌ | ❌ |
+| MCP safety annotations | ✅ `readOnly/destructive/idempotent` | ❌ | ❌ |
+| WireGuard VPN management | ✅ list + add peers | ❌ | ❌ |
+| IPsec peer management | ✅ | ❌ | ❌ |
+| Configuration backup & export | ✅ binary + script export | ❌ | ❌ |
+| Raw command execution (escape hatch) | ✅ `execute_command` | ❌ | ❌ |
+| Pagination on all list tools | ✅ limit/offset | partial | partial |
+| Smart output truncation | ✅ auto-hint for large results | ❌ | ❌ |
+| In-memory caching | ✅ discovery cache | ❌ | ❌ |
+| MCP SDK version | **1.16+** (latest) | old | old |
+| Install via npx | ✅ zero config | ❌ pip install | ❌ pip install |
+
+---
+
+## ✨ Unique Features
+
+### 1. Dynamic API Discovery (unique in ecosystem)
+
+Browse the **entire RouterOS API tree** without needing to know command paths in advance. The AI can explore unknown router configurations autonomously.
+
+```
+→ mikrotik_discover_endpoints(path: "/ip")
+  Returns: address, arp, dhcp-client, dhcp-server, dns, firewall, hotspot, ipsec, ...
+
+→ mikrotik_get_endpoint_schema(path: "/ip/firewall/filter")
+  Returns: available commands (print, add, remove, set, enable, disable) and parameters
+```
+
+This means Claude can discover and interact with **any RouterOS subsystem** — including packages you've installed, containers, advanced routing, hardware-specific features — without the server needing hardcoded knowledge of them.
+
+### 2. Structured Content + Zod Output Schemas
+
+Every tool returns **both** human-readable Markdown **and** machine-readable JSON via `structuredContent`. The JSON is validated against Zod schemas, giving you typed, predictable data structures that work with MCP clients that support structured output.
+
+```typescript
+// Example: mikrotik_list_ip_addresses returns
+{
+  content: [{ type: "text", text: "# IP Addresses\n..." }],   // ← Markdown for AI
+  structuredContent: {                                          // ← Typed JSON for clients
+    total: 5,
+    addresses: [{ id: "*1", address: "192.168.1.1/24", interface: "bridge", ... }]
+  }
+}
+```
+
+### 3. MCP Safety Annotations
+
+Tools are annotated with MCP 2025 safety hints so AI clients can present appropriate warnings:
+
+- `readOnlyHint: true` — safe to call without side effects (list/print operations)
+- `destructiveHint: true` — modifies router state (add/remove/reboot)
+- `idempotentHint: true` — safe to retry
+- `openWorldHint: true` — queries live state from router
+
+The reboot tool additionally requires `confirm: true` parameter as an extra safety gate.
+
+### 4. VPN Management (WireGuard + IPsec)
+
+First MikroTik MCP server with **WireGuard peer management**:
+- List all WireGuard peers with traffic stats
+- Add new WireGuard peers with endpoint and allowed addresses
+- List IPsec peers with profiles
+- Graceful handling when WireGuard package isn't installed
+
+### 5. Raw Command Execution
+
+`mikrotik_execute_command` provides a full escape hatch to the RouterOS API — execute **any** RouterOS command with any parameters. This enables AI to handle edge cases, new RouterOS features, or complex operations not covered by specialized tools.
+
+### 6. Configuration Backup & Export
+
+- `mikrotik_create_backup` — binary RouterOS backup (survives factory reset)
+- `mikrotik_export_config` — human-readable script export with statistics (line count, command count, size)
+
+---
+
+## 📋 Full Tool Reference
+
+### 🖥 System (2 tools)
+| Tool | Description | Annotations |
+|---|---|---|
+| `mikrotik_system_info` | CPU, RAM, storage, uptime, version, board info | readOnly |
+| `mikrotik_system_reboot` | Reboot device (requires `confirm: true`) | destructive |
+
+### 🔌 Interfaces (3 tools)
+| Tool | Description |
+|---|---|
+| `mikrotik_list_interfaces` | List all interfaces with type filter + pagination |
+| `mikrotik_get_interface` | Get detailed info for specific interface |
+| `mikrotik_configure_interface` | Enable/disable, set MTU, comment |
+
+### 🌐 IP Addresses (3 tools)
+| Tool | Description |
+|---|---|
+| `mikrotik_list_ip_addresses` | List all IP addresses with interface filter + pagination |
+| `mikrotik_add_ip_address` | Add IP address to interface |
+| `mikrotik_remove_ip_address` | Remove IP address by ID |
+
+### 🔥 Firewall (3 tools)
+| Tool | Description |
+|---|---|
+| `mikrotik_list_firewall_rules` | List filter rules with chain filter + pagination |
+| `mikrotik_add_firewall_rule` | Add filter rule with full parameter support |
+| `mikrotik_remove_firewall_rule` | Remove rule by ID |
+
+### 📡 DHCP (3 tools)
+| Tool | Description |
+|---|---|
+| `mikrotik_list_dhcp_leases` | List leases with status filter + pagination |
+| `mikrotik_add_static_lease` | Assign static IP to MAC address |
+| `mikrotik_list_dhcp_servers` | List configured DHCP servers |
+
+### 🔍 DNS (2 tools)
+| Tool | Description |
+|---|---|
+| `mikrotik_list_dns_static` | List static DNS records with pagination |
+| `mikrotik_add_dns_record` | Add A/AAAA/CNAME static DNS record |
+
+### 🗺 Routing (3 tools)
+| Tool | Description |
+|---|---|
+| `mikrotik_list_routes` | List all routes with pagination |
+| `mikrotik_add_route` | Add static route with distance and routing table |
+| `mikrotik_list_nat_rules` | List NAT rules with chain filter + pagination |
+
+### 🔐 VPN (3 tools)
+| Tool | Description |
+|---|---|
+| `mikrotik_list_wireguard_peers` | List WireGuard peers with traffic stats |
+| `mikrotik_add_wireguard_peer` | Add WireGuard peer with endpoint |
+| `mikrotik_list_ipsec_peers` | List IPsec peers with profiles |
+
+### 💾 Backup (2 tools)
+| Tool | Description |
+|---|---|
+| `mikrotik_create_backup` | Create binary system backup |
+| `mikrotik_export_config` | Export config as text script with statistics |
+
+### ⚡ Execute (1 tool)
+| Tool | Description |
+|---|---|
+| `mikrotik_execute_command` | Execute any RouterOS API command (destructive) |
+
+### 🔭 Discovery (2 tools)
+| Tool | Description |
+|---|---|
+| `mikrotik_discover_endpoints` | Browse RouterOS API tree at any path |
+| `mikrotik_get_endpoint_schema` | Get available commands & params for endpoint |
+
+**Total: 27 tools + 4 MCP resources**
+
+---
+
+## 📦 MCP Resources
+
+| Resource URI | Description |
+|---|---|
+| `routeros://system/info` | Live system info snapshot |
+| `routeros://interfaces` | All interface states |
+| `routeros://firewall/rules` | Full firewall ruleset |
+| `routeros://routing/routes` | All routing table entries |
+
+---
+
+## 🔧 Installation & Setup
+
+### Claude Desktop
+
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "mikrotik": {
+      "command": "npx",
+      "args": ["-y", "@ai-solutions.ru/mikrotik-mcp-server"],
+      "env": {
+        "MIKROTIK_HOST": "192.168.88.1",
+        "MIKROTIK_USER": "admin",
+        "MIKROTIK_PASSWORD": "yourpassword",
+        "MIKROTIK_PORT": "8728",
+        "MIKROTIK_SECURE": "false"
+      }
+    }
+  }
+}
+```
+
+### Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `MIKROTIK_HOST` | `192.168.88.1` | Router IP or hostname |
+| `MIKROTIK_USER` | `admin` | API username |
+| `MIKROTIK_PASSWORD` | *(required)* | API password |
+| `MIKROTIK_PORT` | `8728` | RouterOS API port (8729 for TLS) |
+| `MIKROTIK_SECURE` | `false` | Use TLS (requires port 8729) |
+| `MIKROTIK_TIMEOUT` | `10000` | Connection timeout in ms |
+| `DISCOVERY_CACHE_TTL` | `300` | Discovery cache TTL in seconds |
+
+### Enable RouterOS API
+
+In RouterOS WebFig or terminal:
+```
+/ip service enable api
+```
+For TLS: `/ip service enable api-ssl`
+
+---
+
+## 💬 Example Conversations
+
+**"What's the current state of my router?"**
+> Calls `mikrotik_system_info` → Returns device name, RouterOS version, CPU load, RAM usage, uptime
+
+**"Show me all firewall rules that drop traffic"**
+> Calls `mikrotik_list_firewall_rules(chain="forward")` → Filters by action=drop
+
+**"Add a static DNS record for myserver.local pointing to 10.0.0.50"**
+> Calls `mikrotik_add_dns_record(name="myserver.local", address="10.0.0.50")`
+
+**"List all WireGuard peers and their traffic stats"**
+> Calls `mikrotik_list_wireguard_peers()` → Returns peers with RX/TX bytes
+
+**"What API endpoints are available under /container?"**
+> Calls `mikrotik_discover_endpoints(path="/container")` → Browses RouterOS container API
+
+**"Export the full router config as a backup script"**
+> Calls `mikrotik_export_config()` → Returns full RouterOS export with stats
+
+---
+
+## 🏗 Architecture
+
+```
+src/
+├── index.ts              # Entry point, env config
+├── server.ts             # MCP server + tool/resource registration
+├── constants.ts          # Configuration constants
+├── routeros/
+│   └── client.ts         # RouterOS API client (node-routeros)
+├── cache/
+│   └── memory.ts         # LRU in-memory cache
+├── discovery/
+│   └── service.ts        # Dynamic API discovery service
+├── tools/
+│   ├── system.ts         # System info & reboot
+│   ├── interfaces.ts     # Interface management
+│   ├── ip-address.ts     # IP address CRUD
+│   ├── firewall.ts       # Firewall rules
+│   ├── dhcp.ts           # DHCP leases & servers
+│   ├── dns.ts            # Static DNS records
+│   ├── routing.ts        # Routes & NAT
+│   ├── vpn.ts            # WireGuard & IPsec
+│   ├── backup.ts         # Backup & export
+│   ├── execute.ts        # Raw command execution
+│   └── discovery.ts      # API discovery tools
+├── resources/
+│   ├── system-info.ts    # System resource
+│   ├── interfaces.ts     # Interfaces resource
+│   ├── firewall.ts       # Firewall resource
+│   └── routing.ts        # Routing resource
+└── utils/
+    ├── format.ts         # Formatting, truncation, pagination
+    ├── errors.ts         # RouterOS error handling
+    └── logger.ts         # Structured logging
+```
+
+---
+
+## 🔒 Security Notes
+
+- All write operations carry `destructiveHint: true` annotation
+- Reboot requires explicit `confirm: true` parameter
+- Credentials are passed via environment variables (never in code)
+- TLS support via `MIKROTIK_SECURE=true` + port 8729
+- Consider using a read-only RouterOS API user for monitoring-only setups
+
+---
+
+## 📜 License
+
+MIT © [AI Solutions](https://ai-solutions.ru)
