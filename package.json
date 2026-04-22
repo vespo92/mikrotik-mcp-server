@@ -1,6 +1,6 @@
 {
   "name": "@vespo92/mikrotik-mcp-server",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "TypeScript MCP server for MikroTik RouterOS — bridge VLAN filtering, dead-man rollback, dynamic API discovery, structured outputs, WireGuard/IPsec, backup & export",
   "type": "module",
   "main": "dist/index.js",
