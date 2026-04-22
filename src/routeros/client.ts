@@ -19,6 +19,9 @@
  *    read never stalls the whole MCP session.
  */
 
+import { applyNodeRouterOsPatches } from "./patches.js";
+applyNodeRouterOsPatches();
+
 import { RouterOSAPI } from "node-routeros";
 import { logger } from "../utils/logger.js";
 import { ConnectionError, AuthError, TimeoutError, RouterOSError } from "../utils/errors.js";
