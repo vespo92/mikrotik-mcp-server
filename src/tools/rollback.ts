@@ -128,7 +128,9 @@ export async function registerRollbackTools(
 
       try {
         const entries = await client.execute("/system/scheduler/print", { ".proplist": ".id,name" });
-        const match = (entries as Record<string, unknown>[]).find((e) => e.name === schedulerName);
+        const match = (Array.isArray(entries) ? entries : []).find(
+          (e: Record<string, unknown>) => e.name === schedulerName
+        );
         if (match) {
           await client.write("/system/scheduler/remove", { ".id": String(match[".id"]) });
           schedulerRemoved = true;
@@ -181,9 +183,9 @@ export async function registerRollbackTools(
     async () => {
       try {
         const entries = await client.execute("/system/scheduler/print");
-        const rollbacks = (entries as Record<string, unknown>[])
-          .filter((e) => String(e.name || "").startsWith(SCHEDULER_PREFIX))
-          .map((e) => ({
+        const rollbacks = (Array.isArray(entries) ? entries : [])
+          .filter((e: Record<string, unknown>) => String(e.name || "").startsWith(SCHEDULER_PREFIX))
+          .map((e: Record<string, unknown>) => ({
             token: String(e.name || "").slice(SCHEDULER_PREFIX.length),
             schedulerName: String(e.name || ""),
             startDate: String(e["start-date"] || ""),

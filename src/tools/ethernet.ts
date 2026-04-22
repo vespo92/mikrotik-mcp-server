@@ -43,7 +43,7 @@ export async function registerEthernetTools(
     async () => {
       try {
         const res = await client.execute("/interface/ethernet/print");
-        const ports = (res as Record<string, unknown>[]).map((p) => ({
+        const ports = (Array.isArray(res) ? res : []).map((p: Record<string, unknown>) => ({
           id: String(p[".id"] || ""),
           name: String(p.name || ""),
           defaultName: String(p["default-name"] || ""),

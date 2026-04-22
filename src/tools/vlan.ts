@@ -43,7 +43,7 @@ export async function registerVlanTools(
     async (params) => {
       try {
         const res = await client.execute("/interface/vlan/print");
-        let vlans = (res as Record<string, unknown>[]).map((v) => ({
+        let vlans = (Array.isArray(res) ? res : []).map((v: Record<string, unknown>) => ({
           id: String(v[".id"] || ""),
           name: String(v.name || ""),
           vlanId: parseInt(String(v["vlan-id"] ?? "0"), 10) || 0,

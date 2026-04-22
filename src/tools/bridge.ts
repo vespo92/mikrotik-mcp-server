@@ -40,7 +40,7 @@ export async function registerBridgeTools(
     async () => {
       try {
         const res = await client.execute("/interface/bridge/print");
-        const bridges = (res as Record<string, unknown>[]).map((b) => ({
+        const bridges = (Array.isArray(res) ? res : []).map((b: Record<string, unknown>) => ({
           id: String(b[".id"] || ""),
           name: String(b.name || ""),
           vlanFiltering: toBool(b["vlan-filtering"] as string),
@@ -172,7 +172,7 @@ export async function registerBridgeTools(
     async (params) => {
       try {
         const res = await client.execute("/interface/bridge/port/print");
-        let ports = (res as Record<string, unknown>[]).map((p) => ({
+        let ports = (Array.isArray(res) ? res : []).map((p: Record<string, unknown>) => ({
           id: String(p[".id"] || ""),
           bridge: String(p.bridge || ""),
           interface: String(p.interface || ""),
@@ -298,7 +298,7 @@ export async function registerBridgeTools(
     async (params) => {
       try {
         const res = await client.execute("/interface/bridge/vlan/print");
-        let vlans = (res as Record<string, unknown>[]).map((v) => ({
+        let vlans = (Array.isArray(res) ? res : []).map((v: Record<string, unknown>) => ({
           id: String(v[".id"] || ""),
           bridge: String(v.bridge || ""),
           vlanIds: String(v["vlan-ids"] || ""),
