@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { Channel } from "node-routeros";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { RouterOSClient } from "../routeros/client.js";
 import { handleRouterOSError } from "../utils/errors.js";
 import { formatBytes, formatUptime, parseUptime, toInt, truncateText } from "../utils/format.js";
 import { SERVER_NAME, SERVER_VERSION } from "../constants.js";
+import { getPatchStatus } from "../routeros/patches.js";
 
 export function registerSystemTools(
   server: McpServer,
@@ -95,18 +95,22 @@ export function registerSystemTools(
         serverName: z.string(),
         serverVersion: z.string(),
         nodeRouterosPatchActive: z.boolean(),
+        patchDetails: z.object({
+          applied: z.boolean(),
+          processPacketPatched: z.boolean(),
+          onUnknownPatched: z.boolean(),
+        }),
         runtime: z.string(),
         runtimeVersion: z.string(),
         pid: z.number(),
+        uptimeSeconds: z.number(),
         startedAt: z.string(),
       },
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async () => {
-      // Detect whether the patch is live by inspecting the prototype function.
-      // The patched version's source contains 'patched to resolve empty'.
-      const onUnknownSrc = (Channel.prototype as unknown as { onUnknown: () => void }).onUnknown.toString();
-      const patchActive = onUnknownSrc.includes("patched to resolve empty") || !onUnknownSrc.includes("RosException");
+      const patch = getPatchStatus();
+      const patchActive = patch.processPacketPatched && patch.onUnknownPatched;
 
       const runtime =
         typeof (globalThis as { Bun?: unknown }).Bun !== "undefined"
@@ -119,14 +123,17 @@ export function registerSystemTools(
           ? (globalThis as unknown as { Bun: { version: string } }).Bun.version
           : process.version;
 
+      const uptimeSec = process.uptime();
       const data = {
         serverName: SERVER_NAME,
         serverVersion: SERVER_VERSION,
         nodeRouterosPatchActive: patchActive,
+        patchDetails: patch,
         runtime,
         runtimeVersion,
         pid: process.pid,
-        startedAt: new Date(Date.now() - Math.floor(process.uptime() * 1000)).toISOString(),
+        uptimeSeconds: uptimeSec,
+        startedAt: new Date(Date.now() - Math.floor(uptimeSec * 1000)).toISOString(),
       };
 
       const md = `# MCP Server Build Info
@@ -134,8 +141,11 @@ export function registerSystemTools(
 - **Server:** ${data.serverName} v${data.serverVersion}
 - **Runtime:** ${data.runtime} ${data.runtimeVersion}
 - **PID:** ${data.pid}
-- **Started:** ${data.startedAt}
-- **node-routeros UNKNOWNREPLY patch:** ${data.nodeRouterosPatchActive ? "active ✓" : "NOT ACTIVE — empty-table crash possible"}`;
+- **Uptime:** ${uptimeSec.toFixed(1)}s (started ${data.startedAt})
+- **Patches:**
+  - processPacket: ${patch.processPacketPatched ? "active ✓" : "NOT ACTIVE ✗"}
+  - onUnknown: ${patch.onUnknownPatched ? "active ✓" : "NOT ACTIVE ✗"}
+- **Overall:** ${patchActive ? "fully patched ✓" : "INCOMPLETE — empty-table crash possible"}`;
 
       return { content: [{ type: "text", text: md }], structuredContent: data };
     }

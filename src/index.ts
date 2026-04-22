@@ -17,15 +17,23 @@ import type { RouterOSConfig } from "./types.js";
 // of crashing the whole MCP server.
 process.on("uncaughtException", (err: Error & { errno?: string; code?: string }) => {
   const errno = err?.errno || err?.code || "";
-  if (errno === "UNKNOWNREPLY" || (err?.name === "RosException" && /UNKNOWNREPLY/.test(err?.message ?? ""))) {
+  const msg = err?.message ?? "";
+  const isRouterOsUnknownReply =
+    errno === "UNKNOWNREPLY" ||
+    err?.name === "RosException" ||
+    /unknown reply/i.test(msg) ||
+    /UNKNOWNREPLY/.test(msg);
+  if (isRouterOsUnknownReply) {
     logger.warn("swallowed node-routeros UNKNOWNREPLY from event callback", {
-      message: err.message,
+      errno,
+      name: err?.name,
+      message: msg,
     });
     return;
   }
   logger.error("uncaughtException (fatal)", {
     name: err?.name,
-    message: err?.message,
+    message: msg,
     stack: err?.stack,
   });
   // Preserve fail-fast for genuinely unexpected errors.
