@@ -5,8 +5,11 @@
 /** Maximum response size in characters */
 export const CHARACTER_LIMIT = 25000;
 
-/** Default API timeout in milliseconds */
-export const DEFAULT_TIMEOUT = 30000;
+/** Default API connect timeout in milliseconds */
+export const DEFAULT_TIMEOUT = 10000;
+
+/** Per-command timeout in milliseconds (hard ceiling for any single call) */
+export const COMMAND_TIMEOUT = 15000;
 
 /** Default pagination limit */
 export const DEFAULT_LIMIT = 50;
@@ -29,12 +32,12 @@ export const HEALTH_CHECK_INTERVAL = 60000;
 /** Connection idle timeout (5 minutes) */
 export const IDLE_TIMEOUT = 300000;
 
-/** Maximum retry attempts */
-export const MAX_RETRIES = 3;
+/** Maximum retry attempts (1 retry = 2 attempts total) */
+export const MAX_RETRIES = 1;
 
 /** Base retry delay in ms (exponential backoff) */
-export const RETRY_BASE_DELAY = 1000;
+export const RETRY_BASE_DELAY = 300;
 
 /** Server metadata */
 export const SERVER_NAME = "mikrotik-mcp-server";
-export const SERVER_VERSION = "3.0.0";
+export const SERVER_VERSION = "3.3.1";

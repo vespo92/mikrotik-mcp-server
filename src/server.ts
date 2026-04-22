@@ -23,6 +23,10 @@ import { registerBackupTools } from "./tools/backup.js";
 import { registerExecuteTools } from "./tools/execute.js";
 import { registerDiscoveryTools } from "./tools/discovery.js";
 import { registerAddressListTools } from "./tools/address-list.js";
+import { registerBridgeTools } from "./tools/bridge.js";
+import { registerVlanTools } from "./tools/vlan.js";
+import { registerEthernetTools } from "./tools/ethernet.js";
+import { registerRollbackTools } from "./tools/rollback.js";
 
 // Resource registrations
 import { registerSystemResource } from "./resources/system-info.js";
@@ -73,7 +77,11 @@ export function createServer(config: RouterOSConfig): ServerComponents {
   registerExecuteTools(server, client);
   registerDiscoveryTools(server, discovery);
   registerAddressListTools(server, client);
-  logger.info("Tools registered: 30");
+  registerBridgeTools(server, client);
+  registerVlanTools(server, client);
+  registerEthernetTools(server, client);
+  registerRollbackTools(server, client);
+  logger.info("Tools registered: 47");
 
   // Register resources
   logger.info("Registering resources...");
