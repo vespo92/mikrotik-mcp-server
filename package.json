@@ -1,7 +1,7 @@
 {
-  "name": "@ai-solutions.ru/mikrotik-mcp-server",
-  "version": "3.0.0",
-  "description": "High-performance MCP server for MikroTik RouterOS — TypeScript, dynamic API discovery, structured outputs, WireGuard/IPsec VPN, backup & export",
+  "name": "@vespo92/mikrotik-mcp-server",
+  "version": "3.1.0",
+  "description": "TypeScript MCP server for MikroTik RouterOS — bridge VLAN filtering, dead-man rollback, dynamic API discovery, structured outputs, WireGuard/IPsec, backup & export",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -44,13 +44,13 @@
   ],
   "author": "AI Solutions <info@ai-solutions.ru>",
   "license": "MIT",
-  "homepage": "https://github.com/ai-solutions-ru/mikrotik-mcp-server#readme",
+  "homepage": "https://github.com/vespo92/mikrotik-mcp-server#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ai-solutions-ru/mikrotik-mcp-server.git"
+    "url": "git+https://github.com/vespo92/mikrotik-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/ai-solutions-ru/mikrotik-mcp-server/issues"
+    "url": "https://github.com/vespo92/mikrotik-mcp-server/issues"
   },
   "publishConfig": {
     "access": "public"

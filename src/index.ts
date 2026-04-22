@@ -5,18 +5,18 @@ import { logger } from "./utils/logger.js";
 import { DEFAULT_API_PORT, DEFAULT_TIMEOUT } from "./constants.js";
 import type { RouterOSConfig } from "./types.js";
 function loadConfig(): RouterOSConfig {
-  const host = process.env.ROUTEROS_HOST;
+  const host = process.env.MIKROTIK_HOST;
   if (!host) {
-    logger.error("ROUTEROS_HOST environment variable is required");
+    logger.error("MIKROTIK_HOST environment variable is required");
     process.exit(1);
   }
   return {
     host,
-    port: parseInt(process.env.ROUTEROS_PORT || String(DEFAULT_API_PORT)),
-    username: process.env.ROUTEROS_USERNAME || "admin",
-    password: process.env.ROUTEROS_PASSWORD || "",
-    secure: process.env.ROUTEROS_SECURE === "true",
-    timeout: parseInt(process.env.ROUTEROS_TIMEOUT || String(DEFAULT_TIMEOUT)),
+    port: parseInt(process.env.MIKROTIK_PORT || String(DEFAULT_API_PORT)),
+    username: process.env.MIKROTIK_USER || process.env.MIKROTIK_USERNAME || "admin",
+    password: process.env.MIKROTIK_PASSWORD || "",
+    secure: process.env.MIKROTIK_SECURE === "true",
+    timeout: parseInt(process.env.MIKROTIK_TIMEOUT || String(DEFAULT_TIMEOUT)),
   };
 }
 async function runStdio(): Promise<void> {

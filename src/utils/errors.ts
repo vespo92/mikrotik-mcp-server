@@ -48,13 +48,13 @@ export function handleRouterOSError(error: unknown): CallToolResult {
   let message: string;
 
   if (error instanceof AuthError) {
-    message = `Authentication failed: ${error.message}. Check ROUTEROS_USERNAME and ROUTEROS_PASSWORD environment variables.`;
+    message = `Authentication failed: ${error.message}. Check MIKROTIK_USER and MIKROTIK_PASSWORD environment variables.`;
   } else if (error instanceof ConnectionError) {
     message =
       `Connection failed${error.host ? ` to ${error.host}` : ""}: ${error.message}. ` +
-      `Verify ROUTEROS_HOST and ROUTEROS_PORT, ensure the API service is enabled on the router.`;
+      `Verify MIKROTIK_HOST and MIKROTIK_PORT, ensure the API service is enabled on the router.`;
   } else if (error instanceof TimeoutError) {
-    message = `Operation timed out: ${error.message}. Try increasing ROUTEROS_TIMEOUT or simplify the query.`;
+    message = `Operation timed out: ${error.message}. Try increasing MIKROTIK_TIMEOUT or simplify the query.`;
   } else if (error instanceof RouterOSError) {
     message = `RouterOS error: ${error.message}`;
   } else if (error instanceof Error) {
