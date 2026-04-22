@@ -81,7 +81,7 @@ export function createServer(config: RouterOSConfig): ServerComponents {
   registerVlanTools(server, client);
   registerEthernetTools(server, client);
   registerRollbackTools(server, client);
-  logger.info("Tools registered: 47");
+  logger.info("Tools registered: 48");
 
   // Register resources
   logger.info("Registering resources...");
