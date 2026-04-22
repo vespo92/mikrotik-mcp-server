@@ -1,6 +1,6 @@
 {
   "name": "@vespo92/mikrotik-mcp-server",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "TypeScript MCP server for MikroTik RouterOS — bridge VLAN filtering, dead-man rollback, dynamic API discovery, structured outputs, WireGuard/IPsec, backup & export",
   "type": "module",
   "main": "dist/index.js",
@@ -14,14 +14,20 @@
   ],
   "scripts": {
     "start": "node dist/index.js",
+    "start:http": "MCP_TRANSPORT=http node dist/index.js",
+    "start:bun": "bun dist/index.js",
+    "start:bun:http": "MCP_TRANSPORT=http bun dist/index.js",
     "dev": "tsx watch src/index.ts",
+    "dev:bun": "bun --watch run src/index.ts",
+    "dev:bun:http": "MCP_TRANSPORT=http bun --watch run src/index.ts",
     "build": "tsc",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=18",
+    "bun": ">=1.1"
   },
   "keywords": [
     "mcp",
@@ -57,10 +63,12 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.16.0",
+    "express": "^5.0.0",
     "node-routeros": "^1.6.8",
     "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^22.10.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"

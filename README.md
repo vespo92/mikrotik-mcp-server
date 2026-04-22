@@ -12,6 +12,8 @@ Forked from [`ai-solutions-ru/mikrotik-mcp-server`](https://github.com/Ai-Soluti
 - **Dead-man rollback** — arm a scheduled auto-restore before risky changes to prevent remote lockout
 - **Hardened `execute_command`** — hard-deny catastrophic ops, confirm-required for high-risk
 - **Ethernet port + VLAN interface tools**
+- **HTTP transport** with bearer-token auth — run it as a networked service for remote agents
+- **Bun-compatible** — run with `bun` or `node`
 
 ```bash
 git clone https://github.com/vespo92/mikrotik-mcp-server.git
@@ -251,13 +253,79 @@ Add to `claude_desktop_config.json`:
 
 | Variable | Default | Description |
 |---|---|---|
-| `MIKROTIK_HOST` | `192.168.88.1` | Router IP or hostname |
+| `MIKROTIK_HOST` | *(required)* | Router IP or hostname |
 | `MIKROTIK_USER` | `admin` | API username |
 | `MIKROTIK_PASSWORD` | *(required)* | API password |
 | `MIKROTIK_PORT` | `8728` | RouterOS API port (8729 for TLS) |
 | `MIKROTIK_SECURE` | `false` | Use TLS (requires port 8729) |
-| `MIKROTIK_TIMEOUT` | `10000` | Connection timeout in ms |
-| `DISCOVERY_CACHE_TTL` | `300` | Discovery cache TTL in seconds |
+| `MIKROTIK_TIMEOUT` | `30000` | Connection timeout in ms |
+| `MCP_TRANSPORT` | `stdio` | `stdio` (Claude Desktop) or `http` (network) |
+| `MCP_HTTP_HOST` | `0.0.0.0` | HTTP bind address (http transport only) |
+| `MCP_HTTP_PORT` | `3000` | HTTP listen port (http transport only) |
+| `MIKROTIK_MCP_TOKEN` | *(empty)* | Bearer token for HTTP auth. **Required** when bound to non-loopback. |
+| `DISCOVERY_CACHE_TTL` | `86400000` | Discovery cache TTL in ms |
+
+---
+
+## 🌐 Run as a Networked Service
+
+Run the MCP server as a daemon and connect from Claude Code (or any MCP client) remotely. Useful when you want a single Claude Code session to control the router from any machine on your LAN.
+
+### Start the server
+
+```bash
+export MIKROTIK_HOST=192.168.88.1
+export MIKROTIK_PASSWORD='...'
+export MCP_TRANSPORT=http
+export MCP_HTTP_HOST=0.0.0.0
+export MCP_HTTP_PORT=3000
+export MIKROTIK_MCP_TOKEN="$(openssl rand -hex 32)"   # save this — you'll need it
+echo "$MIKROTIK_MCP_TOKEN"
+
+# with node
+npm run start:http
+
+# or with bun
+npm run start:bun:http
+```
+
+Health check: `curl http://<host>:3000/healthz` → `{"ok":true,"sessions":0}`
+
+### Connect Claude Code to the networked server
+
+```bash
+claude mcp add --transport http mikrotik http://<server-ip>:3000/mcp \
+  --header "Authorization: Bearer <MIKROTIK_MCP_TOKEN>"
+```
+
+Verify: `claude mcp list` should show `mikrotik: http://.../mcp · Connected`.
+
+### Security notes for network mode
+
+- `MIKROTIK_MCP_TOKEN` is mandatory when binding to `0.0.0.0`. Without it, anyone on the network can reconfigure your router.
+- For untrusted networks, terminate TLS in front of the server (nginx/caddy/Traefik) and never expose it to the public internet.
+- Rotate the token if you suspect compromise — changing env + restarting invalidates all sessions.
+
+---
+
+## 🥟 Bun Support
+
+The server runs under Bun in addition to Node. Bun is faster to start and has built-in TypeScript — nice for dev.
+
+```bash
+# Run compiled output with bun
+bun dist/index.js
+
+# Or run TypeScript directly (no build step)
+bun run src/index.ts
+
+# HTTP transport under bun
+npm run start:bun:http
+# or
+MCP_TRANSPORT=http bun dist/index.js
+```
+
+Verified: `@modelcontextprotocol/sdk` streamable HTTP transport, `node-routeros` (uses `node:net`/`node:tls`), and `express` all work under Bun 1.1+.
 
 ### Enable RouterOS API
 
