@@ -5,3 +5,9 @@ dist/
 .env.local
 .DS_Store
 *.backup
+
+# Agent scratch files — NEVER commit, may contain credentials
+crs326-recon.mjs
+recon-*.mjs
+scratch-*.mjs
+*-credentials.*
