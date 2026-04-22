@@ -37,4 +37,4 @@ export const RETRY_BASE_DELAY = 1000;
 
 /** Server metadata */
 export const SERVER_NAME = "mikrotik-mcp-server";
-export const SERVER_VERSION = "3.0.0";
+export const SERVER_VERSION = "3.1.0";
