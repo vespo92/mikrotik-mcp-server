@@ -1,14 +1,21 @@
-# @ai-solutions.ru/mikrotik-mcp-server
+# @vespo92/mikrotik-mcp-server
 
-[![npm version](https://badge.fury.io/js/%40ai-solutions.ru%2Fmikrotik-mcp-server.svg)](https://www.npmjs.com/package/@ai-solutions.ru/mikrotik-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js >=18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 [![MCP SDK 1.16+](https://img.shields.io/badge/MCP%20SDK-1.16%2B-blue)](https://github.com/modelcontextprotocol/typescript-sdk)
 
-High-performance **TypeScript** MCP (Model Context Protocol) server for MikroTik RouterOS management. Connect Claude, GPT-4, or any MCP-compatible AI to your MikroTik router and manage it through natural language.
+**TypeScript MCP server for MikroTik RouterOS** — manage routers and switches through natural language with Claude or any MCP-compatible client.
+
+Forked from [`ai-solutions-ru/mikrotik-mcp-server`](https://github.com/Ai-Solutions-ru/mikrotik-mcp-server) and extended with:
+
+- **Bridge VLAN filtering tools** for CRS3xx/CRS5xx/CCR switches (hardware-offloaded 802.1Q)
+- **Dead-man rollback** — arm a scheduled auto-restore before risky changes to prevent remote lockout
+- **Hardened `execute_command`** — hard-deny catastrophic ops, confirm-required for high-risk
+- **Ethernet port + VLAN interface tools**
 
 ```bash
-npx @ai-solutions.ru/mikrotik-mcp-server
+git clone https://github.com/vespo92/mikrotik-mcp-server.git
+cd mikrotik-mcp-server && npm install && npm run build
 ```
 
 ---
@@ -151,6 +158,39 @@ First MikroTik MCP server with **WireGuard peer management**:
 | `mikrotik_add_wireguard_peer` | Add WireGuard peer with endpoint |
 | `mikrotik_list_ipsec_peers` | List IPsec peers with profiles |
 
+### 🌉 Bridge / VLAN Filtering (9 tools — CRS3xx+)
+| Tool | Description |
+|---|---|
+| `mikrotik_list_bridges` | List bridges with VLAN filtering state |
+| `mikrotik_add_bridge` | Create a bridge (enable `vlanFiltering` for 802.1Q) |
+| `mikrotik_set_bridge_vlan_filtering` | Toggle VLAN filtering on existing bridge |
+| `mikrotik_list_bridge_ports` | List port memberships with PVID |
+| `mikrotik_add_bridge_port` | Add port to bridge (access/trunk via `frameTypes`) |
+| `mikrotik_remove_bridge_port` | Remove port membership |
+| `mikrotik_list_bridge_vlans` | List bridge VLAN table (tagged/untagged lists) |
+| `mikrotik_add_bridge_vlan` | Add VLAN entry with tagged/untagged port lists |
+| `mikrotik_remove_bridge_vlan` | Remove VLAN table entry |
+
+### 🏷 VLAN Interfaces (3 tools)
+| Tool | Description |
+|---|---|
+| `mikrotik_list_vlans` | List L3 VLAN interfaces |
+| `mikrotik_add_vlan` | Create VLAN interface on bridge (for inter-VLAN routing) |
+| `mikrotik_remove_vlan` | Remove VLAN interface |
+
+### 🔌 Ethernet Ports (2 tools)
+| Tool | Description |
+|---|---|
+| `mikrotik_list_ethernet_ports` | List physical ports with speed/link status |
+| `mikrotik_configure_ethernet_port` | Set speed, auto-neg, duplex, comment |
+
+### 🛟 Rollback Safety (3 tools)
+| Tool | Description |
+|---|---|
+| `mikrotik_arm_rollback` | Take backup + schedule auto-restore in N min (lockout protection) |
+| `mikrotik_disarm_rollback` | Cancel armed rollback after verifying changes |
+| `mikrotik_list_armed_rollbacks` | List pending rollback scheduler entries |
+
 ### 💾 Backup (2 tools)
 | Tool | Description |
 |---|---|
@@ -168,7 +208,7 @@ First MikroTik MCP server with **WireGuard peer management**:
 | `mikrotik_discover_endpoints` | Browse RouterOS API tree at any path |
 | `mikrotik_get_endpoint_schema` | Get available commands & params for endpoint |
 
-**Total: 27 tools + 4 MCP resources**
+**Total: 47 tools + 4 MCP resources**
 
 ---
 
@@ -193,8 +233,8 @@ Add to `claude_desktop_config.json`:
 {
   "mcpServers": {
     "mikrotik": {
-      "command": "npx",
-      "args": ["-y", "@ai-solutions.ru/mikrotik-mcp-server"],
+      "command": "node",
+      "args": ["/absolute/path/to/mikrotik-mcp-server/dist/index.js"],
       "env": {
         "MIKROTIK_HOST": "192.168.88.1",
         "MIKROTIK_USER": "admin",
@@ -293,12 +333,34 @@ src/
 
 - All write operations carry `destructiveHint: true` annotation
 - Reboot requires explicit `confirm: true` parameter
+- `mikrotik_execute_command` has a hard-deny list (reset-configuration, license update, routerboard upgrade, user/active remove) and requires `confirm: true` for high-risk operations (user/service/firewall/reboot/file removal/backup load)
 - Credentials are passed via environment variables (never in code)
 - TLS support via `MIKROTIK_SECURE=true` + port 8729
 - Consider using a read-only RouterOS API user for monitoring-only setups
+- **Before risky remote changes, always call `mikrotik_arm_rollback` first** — this takes a binary backup and schedules an auto-restore job. Disarm it after verifying connectivity.
+
+## 🧪 Example: Setting up a CRS326 with VLANs (safely)
+
+```
+→ mikrotik_arm_rollback(minutes: 10)            # dead-man switch armed
+
+→ mikrotik_add_bridge(name: "bridge1", vlanFiltering: true, pvid: 1)
+→ mikrotik_add_bridge_port(bridge: "bridge1", interface: "sfp-sfpplus1",
+                           pvid: 10, frameTypes: "admit-only-untagged-and-priority-tagged")
+→ mikrotik_add_bridge_port(bridge: "bridge1", interface: "sfp-sfpplus24",
+                           pvid: 1, frameTypes: "admit-only-vlan-tagged")
+→ mikrotik_add_bridge_vlan(bridge: "bridge1", vlanIds: "10",
+                           tagged: "bridge1,sfp-sfpplus24", untagged: "sfp-sfpplus1")
+→ mikrotik_add_vlan(name: "vlan10", vlanId: 10, interface: "bridge1")
+→ mikrotik_add_ip_address(address: "10.10.0.1/24", interface: "vlan10")
+
+# verify connectivity from your laptop...
+
+→ mikrotik_disarm_rollback(token: "...")        # lock in the changes
+```
 
 ---
 
 ## 📜 License
 
-MIT © [AI Solutions](https://ai-solutions.ru)
+MIT — forked from [ai-solutions-ru/mikrotik-mcp-server](https://github.com/Ai-Solutions-ru/mikrotik-mcp-server) © AI Solutions. Fork modifications © Vinnie Esposito.
